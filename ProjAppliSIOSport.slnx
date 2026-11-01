@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="AppliAcceuilSport/AppliAcceuilSport.csproj" Id="e5378bb1-1db9-46bc-b4f2-57a7c2c12562" />
+  <Project Path="AppliConnexionForm/AppliConnexionForm.csproj" Id="5cf58ab6-2d34-49dd-bba2-2fe745cc1476" />
+  <Project Path="AppliFormGestionSIOSport/AppliFormGestionSIOSport.csproj" Id="fec10eee-4693-46a6-a966-7155aa51fbdd" />
+  <Project Path="AppliSIOSport/AppliSIOSport.csproj" Id="2fc8b864-d698-444c-9426-321d7541e20d" />
+</Solution>
