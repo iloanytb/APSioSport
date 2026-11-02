@@ -137,5 +137,15 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BiblioADOSportif\BiblioADOSportif.csproj">
+      <Project>{91214035-4151-45AE-B7FE-D7099E802AA2}</Project>
+      <Name>BiblioADOSportif</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BiblioMetierSportif\BiblioMetierSportif.csproj">
+      <Project>{A35AC800-03A5-4366-BF25-C1F09F791C34}</Project>
+      <Name>BiblioMetierSportif</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

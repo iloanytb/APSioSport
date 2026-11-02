@@ -1,4 +1,6 @@
-﻿using MySql.Data.MySqlClient;
+﻿using BiblioADOSportif;
+using BiblioMetierSportif;
+using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -44,25 +46,17 @@ namespace AppliFormGestionSIOSport
 
         private void btnDel_Click(object sender, EventArgs e)
         {
-            string chaine = ConfigurationManager.ConnectionStrings["cnxBdSport"].ConnectionString;
-            using (MySqlConnection cnx = new MySqlConnection(chaine))
-            {
-                cnx.Open();
-                MySqlCommand cmd = new MySqlCommand();
-                cmd.Connection = cnx;
-                cmd.CommandText = "Delete From Sportif where id = @id";
-                cmd.Parameters.AddWithValue("@id", lstBxSport.SelectedItem.ToString().Split('\t')[0]);
                 //Preparation d'une boite de dialogue dont la réponse sera de type "DialogResult" (truc de base de Visual Studio)
                 DialogResult result = MessageBox.Show("Voulez-vous vraiment supprimer ce sportif ?", "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (result == DialogResult.Yes)
                 {
-                    cmd.ExecuteNonQuery();
+                    SportifADO.Delete(int.Parse(lstBxSport.SelectedItem.ToString().Split('\t')[0]));
+
                 }
                 else
                 {
                     MessageBox.Show("Suppression annulée", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
-            }
             //Vidage de la liste des sportifs
             lstBxSport.Items.Clear();
             //rechargement de la page
@@ -71,10 +65,8 @@ namespace AppliFormGestionSIOSport
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            string chaine = ConfigurationManager.ConnectionStrings["cnxBdSport"].ConnectionString;
-            using (MySqlConnection cnx = new MySqlConnection(chaine))
-            {
-                if (txtBxNom.Text == "" || txtBxPrenom.Text == "" || txtBxRue.Text == "" || txtBxCP.Text == "" || txtBxVille.Text == "" || dateTmNais.Value == DateTime.MinValue || dateTmNais.Value == DateTime.UtcNow)
+            DateTime date = DateTime.Now;
+                if (txtBxNom.Text == "" || txtBxPrenom.Text == "" || txtBxRue.Text == "" || txtBxCP.Text == "" || txtBxVille.Text == "" || dateTmNais.Value == date)
                 {
                     MessageBox.Show("Veuillez remplir tous les champs !");
                     return;
@@ -82,21 +74,9 @@ namespace AppliFormGestionSIOSport
                 else
                 {
 
-
-                    cnx.Open();
-                    MySqlCommand cmd = new MySqlCommand();
-                    cmd.Connection = cnx;
-                    cmd.CommandText = "Insert Into Sportif(nom, prenom,dateNais, rue, cp, ville) values (@nom, @prenom, @dateNais, @rue, @cp, @ville)";
-                    //Ajout des paramètres pour la requête SQL
-                    cmd.Parameters.AddWithValue("@nom", txtBxNom.Text);
-                    cmd.Parameters.AddWithValue("@prenom", txtBxPrenom.Text);
-                    cmd.Parameters.AddWithValue("@dateNais", dateTmNais.Value);
-                    cmd.Parameters.AddWithValue("@rue", txtBxRue.Text);
-                    cmd.Parameters.AddWithValue("@cp", txtBxCP.Text);
-                    cmd.Parameters.AddWithValue("@ville", txtBxVille.Text);
-                    cmd.ExecuteNonQuery();
+                    Sportif unSportif = new Sportif(txtBxNom.Text, txtBxPrenom.Text, dateTmNais.Value, txtBxRue.Text, txtBxCP.Text, txtBxVille.Text);
+                    SportifADO.Insert(unSportif);
                 }
-            }
             //Vidage de la liste des sportifs
             lstBxSport.Items.Clear();
             //Vidage des champs de saisie
@@ -105,8 +85,6 @@ namespace AppliFormGestionSIOSport
             txtBxRue.Clear();
             txtBxCP.Clear();
             txtBxVille.Clear();
-
-            dateTmNais.Value = DateTime.Now;
 
             //rechargement de la page
             FrmGest_Load(sender, e);
@@ -133,6 +111,8 @@ namespace AppliFormGestionSIOSport
                 btnAdd.Enabled = false;
                 //Grisage du bouton pour signifier qu'il est désactivé
                 btnAdd.BackColor = Color.Gray;
+                //Désactivation de la sélection d'un sportif dans la liste
+                lstBxSport.Enabled = false;
             }
         }
 
@@ -149,25 +129,9 @@ namespace AppliFormGestionSIOSport
             }
             else
             {
-                string chaine = ConfigurationManager.ConnectionStrings["cnxBdSport"].ConnectionString;
-                using (MySqlConnection cnx = new MySqlConnection(chaine))
-                {
-                    cnx.Open();
-                    MySqlCommand cmd = new MySqlCommand();
-                    cmd.Connection = cnx;
-                    cmd.CommandText = "Update Sportif Set nom = @nom, prenom = @prenom, dateNais = @dateNais, rue = @rue, cp = @cp, ville = @ville WHERE id = @id";//, nivExp = @nivExp, sport = @sport
-                                                                                                                                                                   //Ajout des paramètres pour la requête SQL
-                    cmd.Parameters.AddWithValue("@nom", txtBxNom.Text);
-                    cmd.Parameters.AddWithValue("@prenom", txtBxPrenom.Text);
-                    cmd.Parameters.AddWithValue("@dateNais", dateTmNais.Value);
-                    cmd.Parameters.AddWithValue("@rue", txtBxRue.Text);
-                    cmd.Parameters.AddWithValue("@cp", txtBxCP.Text);
-                    cmd.Parameters.AddWithValue("@ville", txtBxVille.Text);
-                    //cmd.Parameters.AddWithValue("@nivExp", listeBxExp.SelectedItem);
-                    //cmd.Parameters.AddWithValue("@sport", txtBxSport.Text);
-                    cmd.Parameters.AddWithValue("@id", lstBxSport.SelectedItem.ToString().Split('\t')[0]);
-                    cmd.ExecuteNonQuery();
-                }
+                Sportif unSportif = new Sportif(int.Parse(lstBxSport.SelectedItem.ToString().Split('\t')[0]), txtBxNom.Text, txtBxPrenom.Text, dateTmNais.Value, txtBxRue.Text, txtBxCP.Text, txtBxVille.Text);
+                SportifADO.Update(unSportif);
+
                 //Vidage de la liste des sportifs
                 lstBxSport.Items.Clear();
 
@@ -178,7 +142,7 @@ namespace AppliFormGestionSIOSport
                 txtBxCP.Clear();
                 txtBxVille.Clear();
 
-                dateTmNais.Value = DateTime.Now;
+                
 
                 //rechargement de la page
                 FrmGest_Load(sender, e);
@@ -188,6 +152,8 @@ namespace AppliFormGestionSIOSport
                 btnAdd.Enabled = true;
                 //Restauration de la couleur du bouton d'ajout
                 btnAdd.BackColor = SystemColors.Control;
+                //Activation de la sélection d'un sportif dans la liste
+                lstBxSport.Enabled = true;
             }
         }
 

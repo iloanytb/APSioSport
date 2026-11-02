@@ -1,4 +1,7 @@
-﻿using MySql.Data.MySqlClient;
+﻿using BiblioADOSportif;
+using BiblioMetierSportif;
+using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Crypto;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -20,6 +23,7 @@ namespace AppliFormGestionSIOSport
         private string rue;
         private string cp;
         private string ville;
+
         //il faut passer par un contructeur pour récupérer les informations du sportif sélectionné dans la liste de FrmGest
         public FrmModifNivSport(string nom, string prenom, DateTime dateNais, string rue, string cp, string ville)
         {
@@ -35,58 +39,42 @@ namespace AppliFormGestionSIOSport
 
         private void FrmModifNivSport_Load(object sender, EventArgs e)
         {
-            string chaine = ConfigurationManager.ConnectionStrings["cnxBdSport"].ConnectionString;
-            using (MySqlConnection cnx = new MySqlConnection(chaine))
+            List<Sportif> lesSportifs = SportifADO.GetAllList();
+            foreach (Sportif unSportif in lesSportifs)
             {
-                cnx.Open();
-                MySqlCommand cmd = new MySqlCommand();
-                cmd.Connection = cnx;
-                MySqlCommand cmd2 = new MySqlCommand("Select id from Sportif where nom = @nom AND prenom = @prenom AND dateNais = @dateNais AND rue = @rue AND cp = @cp AND ville = @ville");
-                cmd2.Parameters.AddWithValue("@nom", nom);
-                cmd2.Parameters.AddWithValue("@prenom", prenom);
-                cmd2.Parameters.AddWithValue("@dateNais", dateNais);
-                cmd2.Parameters.AddWithValue("@rue", rue);
-                cmd2.Parameters.AddWithValue("@cp", cp);
-                cmd2.Parameters.AddWithValue("@ville", ville);
-                cmd2.Connection = cnx;
-                //exécution de la requête et récupération du résultat
-                string id = cmd2.ExecuteScalar().ToString();
-
-
-                cmd.CommandText = "Select PS.nivExp AS 'Niveau', S.lib AS 'Sport pratiqué' From Pratiquer_Sport PS Inner Join Sport S ON PS.idSport = S.id Where PS.idSportif = @id";
-                cmd.Parameters.AddWithValue("@id", id);
-                MySqlDataAdapter da = new MySqlDataAdapter(cmd);
-                DataTable dt = new DataTable();
-                da.Fill(dt);
-
-                //Configuration du ListView
-                listeSportNivView.View = View.Details;
-                listeSportNivView.GridLines = true;
-                listeSportNivView.FullRowSelect = true;
-                listeSportNivView.Items.Clear();
-                listeSportNivView.Columns.Clear();
-
-                // Créer les colonnes à partir des colonnes du DataTable
-                foreach (DataColumn col in dt.Columns)
+                if (unSportif.Nom == nom && unSportif.Prenom == prenom && unSportif.DateNais == dateNais && unSportif.Rue == rue && unSportif.Cp == cp && unSportif.Ville == ville)
                 {
-                    listeSportNivView.Columns.Add(col.ColumnName);
-                }
-
-                // Ajouter les lignes
-                foreach (DataRow row in dt.Rows)
-                {
-                    ListViewItem item2 = new ListViewItem(row[0].ToString());
-                    for (int i = 1; i < dt.Columns.Count; i++)
+                    //Récupération de l'id du sportif sélectionné
+                    int idS = unSportif.Id;
+                    DataTable data = Pratiquer_SportADO.GetSportNivById(idS);
+                    //Configuration du ListView
+                    listeSportNivView.View = View.Details;
+                    listeSportNivView.GridLines = true;
+                    listeSportNivView.FullRowSelect = true;
+                    listeSportNivView.Items.Clear();
+                    listeSportNivView.Columns.Clear();
+                    // Créer les colonnes à partir des colonnes du DataTable
+                    foreach (DataColumn col in data.Columns)
                     {
-                        item2.SubItems.Add(row[i].ToString());
+                        listeSportNivView.Columns.Add(col.ColumnName);
                     }
-                    listeSportNivView.Items.Add(item2);
+                    // Ajouter les lignes
+                    foreach (DataRow row in data.Rows)
+                    {
+                        ListViewItem item2 = new ListViewItem(row[0].ToString());
+                        for (int i = 1; i < data.Columns.Count; i++)
+                        {
+                            item2.SubItems.Add(row[i].ToString());
+                        }
+                        listeSportNivView.Items.Add(item2);
+                    }
                 }
+            }
                 listeSportNivView.Visible = true;
                 lblSport.Visible = true;
                 lblSport.Text = $"Pour le sportif : {nom} {prenom} :";
             }
-        }
+        
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
@@ -96,62 +84,61 @@ namespace AppliFormGestionSIOSport
             }
             else
             {
-                string chaine = ConfigurationManager.ConnectionStrings["cnxBdSport"].ConnectionString;
-                using (MySqlConnection cnx = new MySqlConnection(chaine))
+                List<Sportif> lesSportifs = SportifADO.GetAllList();
+                List<Sport> lesSports = SportADO.GetAllList();
+                List<Pratiquer_Sport> lesPratiques = Pratiquer_SportADO.GetAll();
+                int idS = 0;
+                foreach (Sportif unSportif in lesSportifs)
                 {
-                    cnx.Open();
-                    MySqlCommand cmd = new MySqlCommand();
-                    cmd.Connection = cnx;
-                    //Récupération de l'id du sportif sélectionné
-                    MySqlCommand cmd2 = new MySqlCommand("Select id from Sportif where nom = @nom AND prenom = @prenom AND dateNais = @dateNais AND rue = @rue AND cp = @cp AND ville = @ville");
-                    cmd2.Parameters.AddWithValue("@nom", nom);
-                    cmd2.Parameters.AddWithValue("@prenom", prenom);
-                    cmd2.Parameters.AddWithValue("@dateNais", dateNais);
-                    cmd2.Parameters.AddWithValue("@rue", rue);
-                    cmd2.Parameters.AddWithValue("@cp", cp);
-                    cmd2.Parameters.AddWithValue("@ville", ville);
-                    cmd2.Connection = cnx;
-                    //exécution de la requête et récupération du résultat
-                    string idSportif = cmd2.ExecuteScalar().ToString();
-                    //Récupération de l'id du sport sélectionné
-                    MySqlCommand cmd3 = new MySqlCommand("Select id from Sport where lib = @lib");
-                    cmd3.Parameters.AddWithValue("@lib", txtBxNSport.Text);
-                    cmd3.Connection = cnx;
-                    if (cmd3.ExecuteScalar() == null)
+                    if (unSportif.Nom == nom && unSportif.Prenom == prenom && unSportif.DateNais == dateNais && unSportif.Rue == rue && unSportif.Cp == cp && unSportif.Ville == ville)
                     {
-                        MySqlCommand cmd4 = new MySqlCommand("Insert into Sport (lib) values (@lib)");
-                        cmd4.Parameters.AddWithValue("@lib", txtBxNSport.Text);
-                        cmd4.Connection = cnx;
-                        cmd4.ExecuteNonQuery();
+                        //Récupération de l'id du sportif sélectionné
+                        idS = unSportif.Id;
                     }
-                    //exécution de la requête et récupération du résultat
-                    string idSport = cmd3.ExecuteScalar().ToString();
-                    //verif si il existe déjà
-                    MySqlCommand cmd5 = new MySqlCommand("Select * From Pratiquer_Sport Where idSportif = @idSportif AND idSport = @idSport");
-                    cmd5.Parameters.AddWithValue("@idSportif", idSportif);
-                    cmd5.Parameters.AddWithValue("@idSport", idSport);
-                    cmd5.Connection = cnx;
-                    cmd5.ExecuteNonQuery();
-                    if (cmd5.ExecuteScalar() != null)
+                }
+                int idSport = 0;
+                foreach (Sport unSport in lesSports)
+                {
+                    if (unSport.Lib == txtBxNSport.Text)
                     {
-                        MessageBox.Show("Le niveau existe déjà pour ce sportif et ce sport ! Pour modifier le niveau, veuillez utiliser le bouton 'Modifier le niveau du sport sélectionné'");
+                        //Récupération de l'id du sport sélectionné
+                        idSport = unSport.Id;
                     }
                     else
                     {
-                        //insertion dans la table Pratiquer_Sport
-                        cmd.CommandText = "Insert into Pratiquer_Sport (idSportif, idSport, nivExp) values (@idSportif, @idSport, @nivExp)";
-                        cmd.Parameters.AddWithValue("@idSportif", idSportif);
-                        cmd.Parameters.AddWithValue("@idSport", idSport);
-                        cmd.Parameters.AddWithValue("@nivExp", cmbBxNouvNiv.SelectedItem.ToString());
-                        cmd.ExecuteNonQuery();
-                        MessageBox.Show("Le niveau a été ajouté avec succès !");
-
+                        //Récupération de l'id du sport sélectionné
+                        idSport = 0;
                     }
                 }
+                if (idSport == 0) 
+                { 
+                    Sport unNouveauSport = new Sport(txtBxNSport.Text);
+                    SportADO.Insert(unNouveauSport);
+                    lesSports = SportADO.GetAllList();
+                    foreach (Sport unSport in lesSports)
+                    {
+                        if (unSport.Lib == unNouveauSport.Lib)
+                        {
+                            //Récupération de l'id du sport sélectionné
+                            idSport = unSport.Id;
+                        }
+                    }
+                }
+                Pratiquer_Sport pratique_test = new Pratiquer_Sport(idSport, idS);
+                if(lesPratiques.Contains(pratique_test))
+                {
+                    MessageBox.Show("Le niveau existe déjà pour ce sportif et ce sport ! Pour modifier le niveau, veuillez utiliser le bouton 'Modifier le niveau du sport sélectionné'");
+                }
+                else
+                {
+                    string nivExp = cmbBxNouvNiv.SelectedItem.ToString();
+                    Pratiquer_Sport unePratique = new Pratiquer_Sport(idSport, idS, nivExp);
+                    Pratiquer_SportADO.Insert(unePratique);
+                }
+            }
                 cmbBxNouvNiv.SelectedItem = null;
                 txtBxNSport.Clear();
                 FrmModifNivSport_Load(sender, e);
-            }
         }
 
         private void btnModif_Click(object sender, EventArgs e)
@@ -178,43 +165,43 @@ namespace AppliFormGestionSIOSport
 
         private void btnValMod_Click(object sender, EventArgs e)
         {
-            string chaine = ConfigurationManager.ConnectionStrings["cnxBdSport"].ConnectionString;
-            using (MySqlConnection cnx = new MySqlConnection(chaine))
-            {
-                cnx.Open();
-                MySqlCommand cmd = new MySqlCommand("Update Pratiquer_Sport Set nivExp = @nivExp Where idSportif = @idSportif AND idSport = @idSport");
-                cmd.Connection = cnx;
                 if (txtBxSport.Text == "" || cmbBxNiv.SelectedItem == null)
                 {
                     MessageBox.Show("Veuillez remplir tous les champs !");
                 }
                 else
                 {
-                    MySqlCommand cmd2 = new MySqlCommand("Select id from Sportif where nom = @nom AND prenom = @prenom AND dateNais = @dateNais AND rue = @rue AND cp = @cp AND ville = @ville");
-                    cmd2.Connection = cnx;
-                    cmd2.Parameters.AddWithValue("@nom", nom);
-                    cmd2.Parameters.AddWithValue("@prenom", prenom);
-                    cmd2.Parameters.AddWithValue("@dateNais", dateNais);
-                    cmd2.Parameters.AddWithValue("@rue", rue);
-                    cmd2.Parameters.AddWithValue("@cp", cp);
-                    cmd2.Parameters.AddWithValue("@ville", ville);
-                    //récup
-                    string idSportif = cmd2.ExecuteScalar().ToString();
-
-                    MySqlCommand cmd3 = new MySqlCommand("Select id from Sport where lib = @lib");
-                    cmd3.Parameters.AddWithValue("@lib", txtBxSport.Text);
-                    cmd3.Connection = cnx;
-                    //exécution de la requête et récupération du résultat
-                    string idSport = cmd3.ExecuteScalar().ToString();
-
-                    //verif si le niv existe déjà
-                    MySqlCommand cmd5 = new MySqlCommand("Select nivExp From Pratiquer_Sport Where idSportif = @idSportif AND idSport = @idSport");
-                    cmd5.Parameters.AddWithValue("@idSportif", idSportif);
-                    cmd5.Parameters.AddWithValue("@idSport", idSport);
-                    cmd5.Connection = cnx;
-
-                    string nivExpActuel = cmd5.ExecuteScalar().ToString();
-
+                    List<Sportif> lesSportifs = SportifADO.GetAllList();
+                    List<Sport> lesSports = SportADO.GetAllList();
+                    List<Pratiquer_Sport> lesPratiques = Pratiquer_SportADO.GetAll();
+                    int idSportif = 0;
+                    foreach (Sportif unSportif in lesSportifs)
+                    {
+                        if (unSportif.Nom == nom && unSportif.Prenom == prenom && unSportif.DateNais == dateNais && unSportif.Rue == rue && unSportif.Cp == cp && unSportif.Ville == ville)
+                        {
+                            //Récupération de l'id du sportif sélectionné
+                            idSportif = unSportif.Id;
+                        }
+                    }
+                    int idSport = 0;
+                    foreach (Sport unSport in lesSports)
+                    {
+                        if (unSport.Lib == txtBxSport.Text)
+                        {
+                            //Récupération de l'id du sport sélectionné
+                            idSport = unSport.Id;
+                        }
+                    }
+                    string nivExpActuel = "";
+                    foreach (Pratiquer_Sport unePratique in lesPratiques)
+                    {
+                        if (unePratique.IdSportif == idSportif && unePratique.IdSport == idSport)
+                        {
+                            //Récupération du niveau actuel
+                            nivExpActuel = unePratique.NivExp;
+                        }
+                    }
+                    
                     if (nivExpActuel == cmbBxNiv.SelectedItem.ToString())
                     {
                         MessageBox.Show("Le niveau est déjà le bon pour ce sport !");
@@ -222,11 +209,8 @@ namespace AppliFormGestionSIOSport
                     else
                     {
                         string nouvNiv = cmbBxNiv.SelectedItem.ToString();
-                        cmd.Parameters.AddWithValue("@idSportif", idSportif);
-                        cmd.Parameters.AddWithValue("@idSport", idSport);
-                        cmd.Parameters.AddWithValue("@nivExp", nouvNiv);
-                        cmd.ExecuteNonQuery();
-                        //MessageBox.Show($"idSportif: {idSportif}, idSport: {idSport}, nouvNiv: {nouvNiv}");
+                        Pratiquer_Sport unePratiqueMiseAJour = new Pratiquer_Sport(idSport, idSportif, nouvNiv);
+                        Pratiquer_SportADO.Update(unePratiqueMiseAJour);
                         MessageBox.Show("Le niveau a été mis à jour avec succès !");
                         cmbBxNiv.SelectedItem = null;
                         txtBxSport.Clear();
@@ -248,7 +232,6 @@ namespace AppliFormGestionSIOSport
 
 
             }
-        }
 
         private void btnSupp_Click(object sender, EventArgs e)
         {
@@ -279,12 +262,7 @@ namespace AppliFormGestionSIOSport
 
         private void btnValSup_Click(object sender, EventArgs e)
         {
-            string chaine = ConfigurationManager.ConnectionStrings["cnxBdSport"].ConnectionString;
-            using (MySqlConnection cnx = new MySqlConnection(chaine))
-            {
-                cnx.Open();
-                MySqlCommand cmd = new MySqlCommand("Delete from Pratiquer_Sport Where idSportif = @idSportif AND idSport = @idSport AND nivExp = @nivExp");
-                cmd.Connection = cnx;
+            
                 if (txtBxSport.Text == "" || cmbBxNiv.SelectedItem == null)
                 {
                     MessageBox.Show("Veuillez remplir tous les champs !");
@@ -292,38 +270,41 @@ namespace AppliFormGestionSIOSport
                 else
                 {
                     //id sportif récup
-                    MySqlCommand cmd2 = new MySqlCommand("Select id from Sportif where nom = @nom AND prenom = @prenom AND dateNais = @dateNais AND rue = @rue AND cp = @cp AND ville = @ville");
-                    cmd2.Connection = cnx;
-                    cmd2.Parameters.AddWithValue("@nom", nom);
-                    cmd2.Parameters.AddWithValue("@prenom", prenom);
-                    cmd2.Parameters.AddWithValue("@dateNais", dateNais);
-                    cmd2.Parameters.AddWithValue("@rue", rue);
-                    cmd2.Parameters.AddWithValue("@cp", cp);
-                    cmd2.Parameters.AddWithValue("@ville", ville);
-                    //exécution de la requête et récupération du résultat
-                    string idSportif = cmd2.ExecuteScalar().ToString();
-
-                    //id sport récup
-                    MySqlCommand cmd3 = new MySqlCommand("Select id from Sport where lib = @lib");
-                    cmd3.Parameters.AddWithValue("@lib", txtBxSport.Text);
-                    cmd3.Connection = cnx;
-                    //exécution de la requête et récupération du résultat
-                    string idSport = cmd3.ExecuteScalar().ToString();
-
-                    //niv récup
-                    MySqlCommand cmd5 = new MySqlCommand("Select nivExp From Pratiquer_Sport Where idSportif = @idSportif AND idSport = @idSport");
-                    cmd5.Parameters.AddWithValue("@idSportif", idSportif);
-                    cmd5.Parameters.AddWithValue("@idSport", idSport);
-                    cmd5.Connection = cnx;
-
-                    string nivExp = cmd5.ExecuteScalar().ToString();
+                    List<Sportif> lesSportifs = SportifADO.GetAllList();
+                    List<Sport> lesSports = SportADO.GetAllList();
+                    List<Pratiquer_Sport> lesPratiques = Pratiquer_SportADO.GetAll();
+                    int idSportif = 0;
+                    foreach (Sportif unSportif in lesSportifs)
+                    {
+                        if (unSportif.Nom == nom && unSportif.Prenom == prenom && unSportif.DateNais == dateNais && unSportif.Rue == rue && unSportif.Cp == cp && unSportif.Ville == ville)
+                        {
+                            //Récupération de l'id du sportif sélectionné
+                            idSportif = unSportif.Id;
+                        }
+                    }
+                    int idSport = 0;
+                    foreach (Sport unSport in lesSports)
+                    {
+                        if (unSport.Lib == txtBxSport.Text)
+                        {
+                            //Récupération de l'id du sport sélectionné
+                            idSport = unSport.Id;
+                        }
+                    }
+                    string nivExp = "";
+                    foreach (Pratiquer_Sport unePratique in lesPratiques)
+                    {
+                        if (unePratique.IdSportif == idSportif && unePratique.IdSport == idSport)
+                        {
+                            //Récupération du niveau actuel
+                            nivExp = unePratique.NivExp;
+                        }
+                    }
                     DialogResult result = MessageBox.Show("Voulez-vous vraiment supprimer cette pratique de sport ?", "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                     if (result == DialogResult.Yes)
                     {
-                        cmd.Parameters.AddWithValue("@idSportif", idSportif);
-                        cmd.Parameters.AddWithValue("@idSport", idSport);
-                        cmd.Parameters.AddWithValue("@nivExp", nivExp);
-                        cmd.ExecuteNonQuery();
+                        Pratiquer_Sport unePratiqueASupprimer = new Pratiquer_Sport(idSport, idSportif, nivExp);
+                        Pratiquer_SportADO.Delete(unePratiqueASupprimer);
                         cmbBxNiv.SelectedItem = null;
                         txtBxSport.Clear();
                         //refresh
@@ -347,4 +328,3 @@ namespace AppliFormGestionSIOSport
             }
         }
     }
-}
