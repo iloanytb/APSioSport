@@ -1,0 +1,6 @@
+G:\Appolinaire\C# LOlo\APSioSport\ProjAppliSIOSportV5\BiblioMetierSportif\bin\Debug\BiblioMetierSportif.dll
+G:\Appolinaire\C# LOlo\APSioSport\ProjAppliSIOSportV5\BiblioMetierSportif\bin\Debug\BiblioMetierSportif.pdb
+G:\Appolinaire\C# LOlo\APSioSport\ProjAppliSIOSportV5\BiblioMetierSportif\obj\Debug\BiblioMetierSportif.csproj.AssemblyReference.cache
+G:\Appolinaire\C# LOlo\APSioSport\ProjAppliSIOSportV5\BiblioMetierSportif\obj\Debug\BiblioMetierSportif.csproj.CoreCompileInputs.cache
+G:\Appolinaire\C# LOlo\APSioSport\ProjAppliSIOSportV5\BiblioMetierSportif\obj\Debug\BiblioMetierSportif.dll
+G:\Appolinaire\C# LOlo\APSioSport\ProjAppliSIOSportV5\BiblioMetierSportif\obj\Debug\BiblioMetierSportif.pdb
