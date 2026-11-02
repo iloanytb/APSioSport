@@ -1,10 +1,9 @@
-﻿using MySql.Data.MySqlClient;
+﻿using BiblioADOSportif;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.Data;
-using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -45,27 +44,20 @@ namespace AppliSIOSport
 
         private void btnRech_Click(object sender, EventArgs e)
         {
-            string chaine = ConfigurationManager.ConnectionStrings["cnxBdSport"].ConnectionString;
-            using (MySqlConnection cnx = new MySqlConnection(chaine))
+            DataTable dt = new DataTable();
+            if (listeCrit.SelectedItem != null && txtBxSearch.Text != "")
             {
-                cnx.Open();
-                MySqlCommand cmd = new MySqlCommand();
-                cmd.Connection = cnx;
-                if (listeCrit.SelectedItem != null && txtBxSearch.Text != "")
-                {
-                    cmd.CommandText = "Select * From Sportif where " + GetColonneSQL(listeCrit.SelectedItem.ToString())+" LIKE @recherche";
-                    cmd.Parameters.AddWithValue("@recherche", "%"+txtBxSearch.Text+"%");
-                }
-                else 
-                {
-                    cmd.CommandText = "Select * From Sportif";
-                }
-                MySqlDataAdapter da = new MySqlDataAdapter(cmd);
-                DataTable dt = new DataTable();
-                da.Fill(dt);
+                string param = GetColonneSQL(listeCrit.SelectedItem.ToString());
+                string recherche = txtBxSearch.Text;
+                dt = SportifADO.GetByOther(param, recherche);
+            }
+            else
+            {
+                dt = SportifADO.GetAll();
+            }
 
-                //Configuration du ListView
-                listeResView.View = View.Details;
+            //Configuration du ListView
+            listeResView.View = View.Details;
                 listeResView.GridLines = true;
                 listeResView.FullRowSelect = true;
                 listeResView.Items.Clear();
@@ -88,7 +80,6 @@ namespace AppliSIOSport
                     listeResView.Items.Add(item);
                 }
             }
-        }
 
         private void btnQuit_Click(object sender, EventArgs e)
         {
@@ -102,27 +93,17 @@ namespace AppliSIOSport
 
         private void btnAffSport_Click(object sender, EventArgs e)
         {
-            string chaine = ConfigurationManager.ConnectionStrings["cnxBdSport"].ConnectionString;
-            using (MySqlConnection cnx = new MySqlConnection(chaine))
+            if (listeResView.SelectedItems.Count > 0)
             {
-                cnx.Open();
-                MySqlCommand cmd = new MySqlCommand();
-                cmd.Connection = cnx;
-                if (listeResView.SelectedItems.Count > 0)
-                {
-                    ListViewItem item = listeResView.SelectedItems[0];
-                    string id = item.Text;
-                    string nm = item.SubItems[1].Text;
-                    string pm = item.SubItems[2].Text;
+                ListViewItem item = listeResView.SelectedItems[0];
+                int id = int.Parse(item.Text);
+                string nm = item.SubItems[1].Text;
+                string pm = item.SubItems[2].Text;
 
-                    cmd.CommandText = "Select PS.nivExp AS 'Niveau', S.lib AS 'Sport pratiqué' From Pratiquer_Sport PS Inner Join Sport S ON PS.idSport = S.id Where PS.idSportif = @id";
-                    cmd.Parameters.AddWithValue("@id", id);
-                    MySqlDataAdapter da = new MySqlDataAdapter(cmd);
-                    DataTable dt = new DataTable();
-                    da.Fill(dt);
+                DataTable dt = Pratiquer_SportADO.GetSportNivById(id);
 
-                    //Configuration du ListView
-                    lisResAffView.View = View.Details;
+            //Configuration du ListView
+            lisResAffView.View = View.Details;
                     lisResAffView.GridLines = true;
                     lisResAffView.FullRowSelect = true;
                     lisResAffView.Items.Clear();
@@ -154,13 +135,6 @@ namespace AppliSIOSport
                 }
                 
             }
-
-        }
-
-        private void lisResAffView_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
 
         private void listeCrit_SelectedIndexChanged(object sender, EventArgs e)
         {

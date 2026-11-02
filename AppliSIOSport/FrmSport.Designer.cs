@@ -121,7 +121,6 @@
             this.lisResAffView.TabIndex = 23;
             this.lisResAffView.UseCompatibleStateImageBehavior = false;
             this.lisResAffView.Visible = false;
-            this.lisResAffView.SelectedIndexChanged += new System.EventHandler(this.lisResAffView_SelectedIndexChanged);
             // 
             // lblSportif
             // 
