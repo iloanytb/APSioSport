@@ -1,4 +1,7 @@
-﻿using MySql.Data.MySqlClient;
+﻿using AppliFormGestionSIOSport;
+using BiblioADOSportif;
+using BiblioMetierSportif;
+using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -21,23 +24,16 @@ namespace AppliConnexionForm
 
         private void btnVal_Click(object sender, EventArgs e)
         {
-            string chaine = ConfigurationManager.ConnectionStrings["cnxBdSport"].ConnectionString;
-            using (MySqlConnection cnx = new MySqlConnection(chaine))
+            List<Utilisateur> lesUtilisateurs = UtilisateurADO.GetAllList();
+            if (txtBxLog.Text == "" || txtBxPsw.Text == "" || txtBxConfPass.Text == "")
             {
-                cnx.Open();
-                MySqlCommand cmd = new MySqlCommand();
-                cmd.Connection = cnx;
-                cmd.CommandText = "Select * From Utilisateur where login = @login";
-                //Obligatoire de passer par MySqlParameter sinon le texte saisi dans les TextBox n'est pas pris en compte
-                MySqlParameter paramLogin = new MySqlParameter("@login", txtBxLog.Text);
-                cmd.Parameters.Add(paramLogin);
-                if (txtBxLog.Text == "" || txtBxPsw.Text == "" || txtBxConfPass.Text == "")
+                MessageBox.Show("Veuillez remplir tous les champs !");
+            }
+            else
+            {
+                foreach (Utilisateur unUtilisateur in lesUtilisateurs)
                 {
-                    MessageBox.Show("Veuillez remplir tous les champs !");
-                }
-                else
-                {
-                    if (cmd.ExecuteScalar() != null)
+                    if (unUtilisateur.Login == txtBxLog.Text)
                     {
                         MessageBox.Show("Ce login est déjà utilisé, veuillez en choisir un autre !");
                         txtBxLog.Clear();
@@ -56,13 +52,8 @@ namespace AppliConnexionForm
                             }
                             else
                             {
-                                MySqlCommand cmd2 = new MySqlCommand();
-                                cmd2.Connection = cnx;
-                                cmd2.CommandText = "Insert Into Utilisateur(login, psw) values (@login, @psw)";
-                                //Ajout des paramètres pour la requête SQL
-                                cmd2.Parameters.AddWithValue("@login", txtBxLog.Text);
-                                cmd2.Parameters.AddWithValue("@psw", txtBxPsw.Text);
-                                cmd2.ExecuteNonQuery();
+                                Utilisateur unNouvelUtilisateur = new Utilisateur(txtBxLog.Text, txtBxPsw.Text);
+                                UtilisateurADO.Insert(unNouvelUtilisateur);
                                 //Message de confirmation
                                 MessageBox.Show("Compte créé avec succès !", "", MessageBoxButtons.OK);
                                 FrmCnx unObjCnx = new FrmCnx();

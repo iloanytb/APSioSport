@@ -1,4 +1,6 @@
-﻿using MySql.Data.MySqlClient;
+﻿using BiblioMetierSportif;
+using BiblioADOSportif;
+using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -37,74 +39,54 @@ namespace AppliConnexionForm
 
         private void btnVal_Click(object sender, EventArgs e)
         {
-            string chaine = ConfigurationManager.ConnectionStrings["cnxBdSport"].ConnectionString;
-            using (MySqlConnection cnx = new MySqlConnection(chaine))
-            {
-                cnx.Open();
-                MySqlCommand cmd = new MySqlCommand();
-                cmd.Connection = cnx;
-                cmd.CommandText = "Select * From Utilisateur where login = @login";
-                //Obligatoire de passer par MySqlParameter sinon le texte saisi dans les TextBox n'est pas pris en compte
-                MySqlParameter paramLogin = new MySqlParameter("@login", txtBxLog.Text);
-                cmd.Parameters.Add(paramLogin);
-                if (string.IsNullOrEmpty(txtBxLog.Text) || string.IsNullOrEmpty(txtBxPsw.Text) || string.IsNullOrEmpty(txtBxConf.Text))
+            List<Utilisateur> lesUtilisateurs = UtilisateurADO.GetAllList();
+            Utilisateur Lutilisateur = new Utilisateur(txtBxLog.Text, txtBxPsw.Text);
+            if (string.IsNullOrEmpty(txtBxLog.Text) || string.IsNullOrEmpty(txtBxPsw.Text) || string.IsNullOrEmpty(txtBxConf.Text))
                 {
                     MessageBox.Show("Veuillez remplir tous les champs !");
                 }
                 else
                 {
-                    MySqlCommand cmd2 = new MySqlCommand();
-                    cmd2.Connection = cnx;
-                    cmd2.CommandText = "Select * From Utilisateur where psw = @psw AND login = @login";
-                    //Obligatoire de passer par MySqlParameter sinon le texte saisi dans les TextBox n'est pas pris en compte
-                    MySqlParameter paramPsw = new MySqlParameter("@psw", txtBxPsw.Text);
-                    cmd2.Parameters.Add(paramPsw);
-                    MySqlParameter paramLogin2 = new MySqlParameter("@login", txtBxLog.Text);
-                    cmd2.Parameters.Add(paramLogin2);
-                    if (cmd2.ExecuteScalar() != null)
+                    foreach (Utilisateur unUtilisateur in lesUtilisateurs)
                     {
-                        MessageBox.Show("Ceci est déjà votre mot de passe !");
-                        txtBxPsw.Clear();
-                        txtBxConf.Clear();
-                    }
-                    else
-                    {
-
-                        if (cmd.ExecuteScalar() == null)
+                        if (unUtilisateur.Login == Lutilisateur.Login && unUtilisateur.Psw == Lutilisateur.Psw)
                         {
-                            MessageBox.Show("Ce login n'est pas le bon !");
-                            txtBxLog.Clear();
+                            MessageBox.Show("Ceci est déjà votre mot de passe !");
                             txtBxPsw.Clear();
                             txtBxConf.Clear();
                         }
                         else
                         {
-                            if (txtBxPsw.Text != txtBxConf.Text)
+                            List<string> lesLogins = UtilisateurADO.GetAllLogins();
+                            int cpt = 0;
+                            foreach (string login in lesLogins)
                             {
-                                MessageBox.Show("Les mots de passe ne correspondent pas !");
+                                if (login != Lutilisateur.Login)
+                                {
+                                    cpt++;
+                                }
+                            }
+                            if (cpt >= lesLogins.Count)
+                            {
+                                MessageBox.Show("Ce login n'est pas le bon !");
                                 txtBxPsw.Clear();
                                 txtBxConf.Clear();
                             }
                             else
                             {
-                                MySqlCommand cmd3 = new MySqlCommand();
-                                cmd3.Connection = cnx;
-                                cmd3.CommandText = "Update Utilisateur set psw = @psw where login = @login";
-                                //Ajout des paramètres pour la requête SQL
-                                cmd3.Parameters.AddWithValue("@login", txtBxLog.Text);
-                                cmd3.Parameters.AddWithValue("@psw", txtBxPsw.Text);
-                                cmd3.ExecuteNonQuery();
-                                //message confirmation
-                                MessageBox.Show("Mot de passe modifié !");
-                                //Réouverture connexion
-                                FrmCnx unObjCnx = new FrmCnx();
-                                unObjCnx.Show();
-                                this.Close();
+                                    UtilisateurADO.Update(Lutilisateur);
+                                    //message confirmation
+                                    MessageBox.Show("Mot de passe modifié !");
+                                    //Réouverture connexion
+                                    FrmCnx unObjCnx = new FrmCnx();
+                                    unObjCnx.Show();
+                                    this.Close();
+                            
                             }
                         }
                     }
+                    
                 }
             }
         }
     }
-}
