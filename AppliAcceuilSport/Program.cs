@@ -17,6 +17,7 @@ namespace AppliAcceuilSport
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new frmAccueil());
+
         }
     }
 }
